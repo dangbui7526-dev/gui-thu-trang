@@ -46,8 +46,9 @@ controls.target.copy(DEFAULT_CAM_TARGET);
 const ambientLight = new THREE.AmbientLight(0x2a103d, 1.4);
 scene.add(ambientLight);
 
-const treeLight = new THREE.PointLight(0xffb6c1, 2.5, 45);
-treeLight.position.set(0, 8, 0);
+// Đèn chính chiếu vào mặt trăng (đặt ngoài quả cầu để sáng được mặt ngoài)
+const treeLight = new THREE.PointLight(0xfff0d0, 2.5, 45);
+treeLight.position.set(6, 14, 12);
 scene.add(treeLight);
 
 const warmLight = new THREE.PointLight(0xffaa33, 2.0, 30);
@@ -58,196 +59,89 @@ scene.add(warmLight);
 const islandGroup = new THREE.Group();
 scene.add(islandGroup);
 
-const islandGeo = new THREE.CylinderGeometry(
-  8.5,
-  2.2,
-  7.5,
-  isMobile ? 32 : 48,
-  12,
+// MẶT TRĂNG NHỎ (thay cho đảo bay)
+islandGroup.position.set(0, 6, 0);
+const MOON_RADIUS = 4;
+
+function createMoonTexture() {
+  const w = 1024;
+  const h = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#e9e5d3";
+  ctx.fillRect(0, 0, w, h);
+
+  // các vùng tối lớn
+  for (let i = 0; i < 14; i++) {
+    const x = Math.random() * w;
+    const y = h * 0.2 + Math.random() * h * 0.6;
+    const r = 40 + Math.random() * 90;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, "rgba(150,145,130,0.55)");
+    g.addColorStop(1, "rgba(150,145,130,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // các hố nhỏ
+  for (let i = 0; i < 90; i++) {
+    const x = Math.random() * w;
+    const y = h * 0.15 + Math.random() * h * 0.7;
+    const r = 4 + Math.random() * 16;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(120,115,100,0.35)";
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(255,255,245,0.35)";
+    ctx.stroke();
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
+const moonTex = createMoonTexture();
+const moonMat = new THREE.MeshStandardMaterial({
+  map: moonTex,
+  emissiveMap: moonTex,
+  emissive: new THREE.Color(0xfff1c9),
+  emissiveIntensity: 0.55,
+  roughness: 0.95,
+});
+const moonMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(MOON_RADIUS, isMobile ? 32 : 64, isMobile ? 32 : 64),
+  moonMat,
 );
-const posAttr = islandGeo.attributes.position;
-for (let i = 0; i < posAttr.count; i++) {
-  const vx = posAttr.getX(i);
-  const vy = posAttr.getY(i);
-  const vz = posAttr.getZ(i);
+islandGroup.add(moonMesh);
 
-  const distFromCenter = Math.sqrt(vx * vx + vz * vz);
-  const noise =
-    Math.sin(vx * 0.8) * Math.cos(vz * 0.8) * 0.6 +
-    Math.sin(vx * 1.8 + vz * 1.5) * 0.3;
-
-  if (vy > 0) {
-    posAttr.setY(i, vy + noise * (1.0 - distFromCenter / 12));
-  } else {
-    posAttr.setX(i, vx + (Math.random() - 0.5) * 1.4);
-    posAttr.setZ(i, vz + (Math.random() - 0.5) * 1.4);
-  }
+// quầng sáng quanh mặt trăng
+function createMoonGlowTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, "rgba(255,244,205,0.9)");
+  g.addColorStop(0.35, "rgba(255,236,180,0.35)");
+  g.addColorStop(1, "rgba(255,236,180,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(canvas);
 }
-islandGeo.computeVertexNormals();
-
-const islandMat = new THREE.MeshStandardMaterial({
-  color: 0x3d231b,
-  roughness: 0.85,
-  flatShading: true,
-});
-const islandMesh = new THREE.Mesh(islandGeo, islandMat);
-islandGroup.add(islandMesh);
-
-const topGeo = new THREE.CylinderGeometry(8.6, 7.8, 0.8, isMobile ? 32 : 48, 4);
-const topPos = topGeo.attributes.position;
-for (let i = 0; i < topPos.count; i++) {
-  const vx = topPos.getX(i);
-  const vy = topPos.getY(i);
-  const vz = topPos.getZ(i);
-  const noise = Math.sin(vx * 0.9) * Math.cos(vz * 0.9) * 0.5;
-  topPos.setY(i, vy + noise * 0.4);
-}
-topGeo.computeVertexNormals();
-const topMat = new THREE.MeshStandardMaterial({
-  color: 0x22130e,
-  roughness: 0.9,
-  flatShading: true,
-});
-const topMesh = new THREE.Mesh(topGeo, topMat);
-topMesh.position.y = 3.6;
-islandGroup.add(topMesh);
-
-// BỆ MẶT ĐÁ NHỎ & ĐÁ TẢNG RẢI RÁC ÍT HƠN
-const stoneMat = new THREE.MeshStandardMaterial({
-  color: 0x4a4d52,
-  roughness: 0.85,
-  metalness: 0.1,
-  flatShading: true,
-});
-
-// 1. Bệ đá nhỏ dẹt ẩn nhẹ dưới gốc cây
-const mainStonePlatformGeo = new THREE.CylinderGeometry(2.5, 3.0, 0.15, 6);
-const mainStonePlatform = new THREE.Mesh(mainStonePlatformGeo, stoneMat);
-mainStonePlatform.position.set(0, 3.9, 0);
-islandGroup.add(mainStonePlatform);
-
-// 2. Chỉ 3 viên đá nhỏ điểm xuyết trên mặt đất
-const rockCount = 3;
-for (let i = 0; i < rockCount; i++) {
-  const rockGeo = new THREE.DodecahedronGeometry(0.2 + Math.random() * 0.25, 0);
-  const rockMesh = new THREE.Mesh(rockGeo, stoneMat);
-
-  const angle = (i / rockCount) * Math.PI * 2 + 0.5;
-  const dist = 3.8 + Math.random() * 2.0;
-
-  rockMesh.position.set(Math.cos(angle) * dist, 3.9, Math.sin(angle) * dist);
-  rockMesh.rotation.set(
-    Math.random() * Math.PI,
-    Math.random() * Math.PI,
-    Math.random() * Math.PI,
-  );
-  islandGroup.add(rockMesh);
-}
-
-// TREE TRUNK & BRANCHES
-const treeGroup = new THREE.Group();
-treeGroup.position.set(0, 4.0, 0);
-islandGroup.add(treeGroup);
-
-const trunkMat = new THREE.MeshStandardMaterial({
-  color: 0x2b140e,
-  roughness: 0.85,
-});
-
-const trunkCurve = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(0, 0, 0),
-  new THREE.Vector3(0.15, 2.5, -0.1),
-  new THREE.Vector3(-0.1, 5.0, 0.1),
-  new THREE.Vector3(0.0, 7.5, 0.0),
-]);
-
-const trunkGeo = new THREE.TubeGeometry(trunkCurve, 32, 0.28, 8, false);
-const trunkMesh = new THREE.Mesh(trunkGeo, trunkMat);
-treeGroup.add(trunkMesh);
-
-const branchClusters = [];
-const mainBranchCount = 12;
-for (let i = 0; i < mainBranchCount; i++) {
-  const angle = (i / mainBranchCount) * Math.PI * 2 + Math.random() * 0.3;
-  const h = 3.0 + Math.random() * 4.0;
-  const startP = trunkCurve.getPointAt(h / 7.5);
-  const len = 3.0 + Math.random() * 2.2;
-
-  const endP = new THREE.Vector3(
-    startP.x + Math.cos(angle) * len,
-    startP.y + 0.8 + Math.random() * 1.0,
-    startP.z + Math.sin(angle) * len,
-  );
-
-  const midP = new THREE.Vector3().addVectors(startP, endP).multiplyScalar(0.5);
-  midP.y += 0.4;
-
-  const bCurve = new THREE.CatmullRomCurve3([startP, midP, endP]);
-  const bGeo = new THREE.TubeGeometry(bCurve, 10, 0.09, 6, false);
-  const bMesh = new THREE.Mesh(bGeo, trunkMat);
-  treeGroup.add(bMesh);
-
-  branchClusters.push({ center: endP, radius: 3.2 + Math.random() * 1.0 });
-}
-
-// HỆ THỐNG TÁN LÁ
-const particleCount = isMobile ? 22000 : 38000;
-const blossomGeo = new THREE.BufferGeometry();
-const blossomPos = new Float32Array(particleCount * 3);
-const blossomColors = new Float32Array(particleCount * 3);
-
-const colorDustyPink = new THREE.Color(0xe8a2a8);
-const colorSoftPink = new THREE.Color(0xf0b6bc);
-const colorPaleRose = new THREE.Color(0xf7d1d5);
-const colorSoftWhite = new THREE.Color(0xfdf0f2);
-
-const clusters = [
-  { center: new THREE.Vector3(0, 9.5, 0), radius: 6.2 },
-  { center: new THREE.Vector3(0, 7.5, 0), radius: 7.0 },
-  { center: new THREE.Vector3(0, 5.5, 0), radius: 6.0 },
-  ...branchClusters,
-];
-
-for (let i = 0; i < particleCount; i++) {
-  const c = clusters[Math.floor(Math.random() * clusters.length)];
-
-  const u = Math.random();
-  const r = Math.pow(u, 0.65) * c.radius;
-  const theta = Math.random() * Math.PI * 2;
-  const phi = Math.acos(2 * Math.random() - 1);
-
-  const x = c.center.x + r * Math.sin(phi) * Math.cos(theta);
-  const y = c.center.y + r * Math.sin(phi) * Math.sin(theta) * 0.8;
-  const z = c.center.z + r * Math.cos(phi);
-
-  blossomPos[i * 3] = x;
-  blossomPos[i * 3 + 1] = y;
-  blossomPos[i * 3 + 2] = z;
-
-  const heightFactor = THREE.MathUtils.clamp((y - 3) / 7, 0, 1);
-  const randC = Math.random();
-  let col;
-
-  if (heightFactor < 0.3) {
-    col = randC < 0.6 ? colorDustyPink : colorSoftPink;
-  } else if (heightFactor < 0.7) {
-    col =
-      randC < 0.4
-        ? colorSoftPink
-        : randC < 0.8
-          ? colorPaleRose
-          : colorDustyPink;
-  } else {
-    col = randC < 0.5 ? colorSoftWhite : colorPaleRose;
-  }
-
-  blossomColors[i * 3] = col.r;
-  blossomColors[i * 3 + 1] = col.g;
-  blossomColors[i * 3 + 2] = col.b;
-}
-
-blossomGeo.setAttribute("position", new THREE.BufferAttribute(blossomPos, 3));
-blossomGeo.setAttribute("color", new THREE.BufferAttribute(blossomColors, 3));
+const moonGlow = new THREE.Sprite(
+  new THREE.SpriteMaterial({
+    map: createMoonGlowTexture(),
+    transparent: true,
+    opacity: 0.55,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  }),
+);
+moonGlow.scale.set(MOON_RADIUS * 4.5, MOON_RADIUS * 4.5, 1);
+islandGroup.add(moonGlow);
 
 function createParticleTexture() {
   const canvas = document.createElement("canvas");
@@ -264,19 +158,6 @@ function createParticleTexture() {
   ctx.fill();
   return new THREE.CanvasTexture(canvas);
 }
-
-const blossomMat = new THREE.PointsMaterial({
-  size: isMobile ? 0.5 : 0.42,
-  vertexColors: true,
-  map: createParticleTexture(),
-  transparent: true,
-  opacity: 0.75,
-  blending: THREE.NormalBlending,
-  depthWrite: false,
-});
-
-const blossomParticles = new THREE.Points(blossomGeo, blossomMat);
-treeGroup.add(blossomParticles);
 
 // RABBITS
 function createRabbit() {
@@ -319,31 +200,37 @@ for (let i = 0; i < 4; i++) {
 
   rabbits.push({
     mesh: rabbitMesh,
-    orbitRadius: 2.8 + Math.random() * 3.2,
-    orbitSpeed: (0.12 + Math.random() * 0.15) * (i % 2 === 0 ? 1 : -1),
+    tilt: 0.45 + Math.random() * 0.6, // góc lệch so với đỉnh mặt trăng (rad)
+    orbitSpeed: (0.22 + Math.random() * 0.2) * (i % 2 === 0 ? 1 : -1),
     phase: (i / 4) * Math.PI * 2,
-    baseY: 4.05,
     hopSpeed: 4.5 + Math.random() * 2.0,
     hopHeight: 0.15,
-    scale: 0.75 + Math.random() * 0.25,
+    scale: 0.5 + Math.random() * 0.15,
   });
   rabbits[i].mesh.scale.setScalar(rabbits[i].scale);
 }
+
+const rabUp = new THREE.Vector3();
+const rabFwd = new THREE.Vector3();
+const rabRight = new THREE.Vector3();
+const rabBasis = new THREE.Matrix4();
 
 function updateRabbits(time) {
   rabbits.forEach((r) => {
     const angle = r.phase + time * r.orbitSpeed;
     const sign = Math.sign(r.orbitSpeed) || 1;
-
-    const x = Math.cos(angle) * r.orbitRadius;
-    const z = Math.sin(angle) * r.orbitRadius;
+    const sinT = Math.sin(r.tilt);
     const hop = Math.abs(Math.sin(time * r.hopSpeed)) * r.hopHeight;
 
-    r.mesh.position.set(x, r.baseY + hop, z);
+    // "hướng lên" của thỏ = pháp tuyến mặt cầu tại chỗ thỏ đứng
+    rabUp.set(sinT * Math.cos(angle), Math.cos(r.tilt), sinT * Math.sin(angle));
+    // hướng chạy = tiếp tuyến của vòng chạy
+    rabFwd.set(-Math.sin(angle) * sign, 0, Math.cos(angle) * sign);
+    rabRight.crossVectors(rabUp, rabFwd);
 
-    const dx = -Math.sin(angle) * sign;
-    const dz = Math.cos(angle) * sign;
-    r.mesh.rotation.y = Math.atan2(dx, dz);
+    rabBasis.makeBasis(rabRight, rabUp, rabFwd);
+    r.mesh.quaternion.setFromRotationMatrix(rabBasis);
+    r.mesh.position.copy(rabUp).multiplyScalar(MOON_RADIUS - 0.05 + hop);
   });
 }
 

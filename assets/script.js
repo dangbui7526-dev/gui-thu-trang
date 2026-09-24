@@ -60,7 +60,7 @@ const islandGroup = new THREE.Group();
 scene.add(islandGroup);
 
 // MẶT TRĂNG NHỎ (thay cho đảo bay)
-islandGroup.position.set(0, 6, 0);
+islandGroup.position.set(0, 5, 0);
 const MOON_RADIUS = 4;
 
 function createMoonTexture() {
@@ -143,6 +143,113 @@ const moonGlow = new THREE.Sprite(
 moonGlow.scale.set(MOON_RADIUS * 4.5, MOON_RADIUS * 4.5, 1);
 islandGroup.add(moonGlow);
 
+// TREE TRUNK & BRANCHES
+const TREE_SCALE = 0.6; // thu nhỏ cây cho vừa mặt trăng nhỏ
+const treeGroup = new THREE.Group();
+treeGroup.position.set(0, MOON_RADIUS - 0.2, 0); // gốc cây cắm trên đỉnh mặt trăng
+treeGroup.scale.setScalar(TREE_SCALE);
+islandGroup.add(treeGroup);
+
+const trunkMat = new THREE.MeshStandardMaterial({
+  color: 0x2b140e,
+  roughness: 0.85,
+});
+
+const trunkCurve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(0.15, 2.5, -0.1),
+  new THREE.Vector3(-0.1, 5.0, 0.1),
+  new THREE.Vector3(0.0, 7.5, 0.0),
+]);
+
+const trunkGeo = new THREE.TubeGeometry(trunkCurve, 32, 0.28, 8, false);
+const trunkMesh = new THREE.Mesh(trunkGeo, trunkMat);
+treeGroup.add(trunkMesh);
+
+const branchClusters = [];
+const mainBranchCount = 12;
+for (let i = 0; i < mainBranchCount; i++) {
+  const angle = (i / mainBranchCount) * Math.PI * 2 + Math.random() * 0.3;
+  const h = 3.0 + Math.random() * 4.0;
+  const startP = trunkCurve.getPointAt(h / 7.5);
+  const len = 3.0 + Math.random() * 2.2;
+
+  const endP = new THREE.Vector3(
+    startP.x + Math.cos(angle) * len,
+    startP.y + 0.8 + Math.random() * 1.0,
+    startP.z + Math.sin(angle) * len,
+  );
+
+  const midP = new THREE.Vector3().addVectors(startP, endP).multiplyScalar(0.5);
+  midP.y += 0.4;
+
+  const bCurve = new THREE.CatmullRomCurve3([startP, midP, endP]);
+  const bGeo = new THREE.TubeGeometry(bCurve, 10, 0.09, 6, false);
+  const bMesh = new THREE.Mesh(bGeo, trunkMat);
+  treeGroup.add(bMesh);
+
+  branchClusters.push({ center: endP, radius: 3.2 + Math.random() * 1.0 });
+}
+
+// HỆ THỐNG TÁN LÁ
+const particleCount = isMobile ? 22000 : 38000;
+const blossomGeo = new THREE.BufferGeometry();
+const blossomPos = new Float32Array(particleCount * 3);
+const blossomColors = new Float32Array(particleCount * 3);
+
+const colorDustyPink = new THREE.Color(0xe8a2a8);
+const colorSoftPink = new THREE.Color(0xf0b6bc);
+const colorPaleRose = new THREE.Color(0xf7d1d5);
+const colorSoftWhite = new THREE.Color(0xfdf0f2);
+
+const clusters = [
+  { center: new THREE.Vector3(0, 9.5, 0), radius: 6.2 },
+  { center: new THREE.Vector3(0, 7.5, 0), radius: 7.0 },
+  { center: new THREE.Vector3(0, 5.5, 0), radius: 6.0 },
+  ...branchClusters,
+];
+
+for (let i = 0; i < particleCount; i++) {
+  const c = clusters[Math.floor(Math.random() * clusters.length)];
+
+  const u = Math.random();
+  const r = Math.pow(u, 0.65) * c.radius;
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.acos(2 * Math.random() - 1);
+
+  const x = c.center.x + r * Math.sin(phi) * Math.cos(theta);
+  const y = c.center.y + r * Math.sin(phi) * Math.sin(theta) * 0.8;
+  const z = c.center.z + r * Math.cos(phi);
+
+  blossomPos[i * 3] = x;
+  blossomPos[i * 3 + 1] = y;
+  blossomPos[i * 3 + 2] = z;
+
+  const heightFactor = THREE.MathUtils.clamp((y - 3) / 7, 0, 1);
+  const randC = Math.random();
+  let col;
+
+  if (heightFactor < 0.3) {
+    col = randC < 0.6 ? colorDustyPink : colorSoftPink;
+  } else if (heightFactor < 0.7) {
+    col =
+      randC < 0.4
+        ? colorSoftPink
+        : randC < 0.8
+          ? colorPaleRose
+          : colorDustyPink;
+  } else {
+    col = randC < 0.5 ? colorSoftWhite : colorPaleRose;
+  }
+
+  blossomColors[i * 3] = col.r;
+  blossomColors[i * 3 + 1] = col.g;
+  blossomColors[i * 3 + 2] = col.b;
+}
+
+blossomGeo.setAttribute("position", new THREE.BufferAttribute(blossomPos, 3));
+blossomGeo.setAttribute("color", new THREE.BufferAttribute(blossomColors, 3));
+
 function createParticleTexture() {
   const canvas = document.createElement("canvas");
   canvas.width = 32;
@@ -158,6 +265,19 @@ function createParticleTexture() {
   ctx.fill();
   return new THREE.CanvasTexture(canvas);
 }
+
+const blossomMat = new THREE.PointsMaterial({
+  size: (isMobile ? 0.5 : 0.42) * TREE_SCALE,
+  vertexColors: true,
+  map: createParticleTexture(),
+  transparent: true,
+  opacity: 0.75,
+  blending: THREE.NormalBlending,
+  depthWrite: false,
+});
+
+const blossomParticles = new THREE.Points(blossomGeo, blossomMat);
+treeGroup.add(blossomParticles);
 
 // RABBITS
 function createRabbit() {
@@ -200,12 +320,12 @@ for (let i = 0; i < 4; i++) {
 
   rabbits.push({
     mesh: rabbitMesh,
-    tilt: 0.45 + Math.random() * 0.6, // góc lệch so với đỉnh mặt trăng (rad)
+    tilt: 0.5 + Math.random() * 0.45, // góc lệch so với gốc cây (rad): nhỏ = sát gốc
     orbitSpeed: (0.22 + Math.random() * 0.2) * (i % 2 === 0 ? 1 : -1),
     phase: (i / 4) * Math.PI * 2,
     hopSpeed: 4.5 + Math.random() * 2.0,
     hopHeight: 0.15,
-    scale: 0.5 + Math.random() * 0.15,
+    scale: 0.45 + Math.random() * 0.15,
   });
   rabbits[i].mesh.scale.setScalar(rabbits[i].scale);
 }

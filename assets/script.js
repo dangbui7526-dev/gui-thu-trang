@@ -362,7 +362,7 @@ const wishList = [
     img: "./assets/2.jpg",
   },
   {
-    text: "Trăng tròn ấm áp, chúc cậu và gia đình luôn hạnh phúc.",
+    text: "Trăng tròn ấm áp, Chúc cậu một mùa Trung thu đủ đầy, mỗi ngày đều nhẹ nhàng như ánh trăng đêm rằm.",
     img: "./assets/3.jpg",
   },
   {

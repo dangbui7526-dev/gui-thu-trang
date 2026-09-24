@@ -181,11 +181,15 @@ html {
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
-  color: rgba(255, 235, 205, 0.75);
-  font-size: 13px;
-  letter-spacing: 1px;
+color: #FFD700;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
   pointer-events: none;
-  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+  text-shadow: 
+    0 0 6px #000,
+    0 0 12px #000,
+    0 2px 4px rgba(0,0,0,0.9);
   animation: pulseHint 2s infinite alternate;
   text-align: center;
   width: 90%;

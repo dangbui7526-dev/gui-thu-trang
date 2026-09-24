@@ -29,7 +29,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.25;
+renderer.toneMappingExposure = 0.5;
 container.appendChild(renderer.domElement);
 renderer.setClearColor(0x000000, 0);
 container.style.background = 'url("./assets/bg.jpg") center / cover no-repeat';
@@ -43,15 +43,15 @@ controls.maxDistance = 85;
 controls.target.copy(DEFAULT_CAM_TARGET);
 
 // LIGHTS
-const ambientLight = new THREE.AmbientLight(0x2a103d, 1.4);
+const ambientLight = new THREE.AmbientLight(0x2a103d, 1.);
 scene.add(ambientLight);
 
 // Đèn chính chiếu vào mặt trăng (đặt ngoài quả cầu để sáng được mặt ngoài)
-const treeLight = new THREE.PointLight(0xfff0d0, 2.5, 45);
+const treeLight = new THREE.PointLight(0xfff0d0, 1., 45);
 treeLight.position.set(6, 14, 12);
 scene.add(treeLight);
 
-const warmLight = new THREE.PointLight(0xffaa33, 2.0, 30);
+const warmLight = new THREE.PointLight(0xffaa33, 1., 30);
 warmLight.position.set(0, -2, 0);
 scene.add(warmLight);
 
@@ -108,7 +108,7 @@ const moonMat = new THREE.MeshStandardMaterial({
   map: moonTex,
   emissiveMap: moonTex,
   emissive: new THREE.Color(0xfff1c9),
-  emissiveIntensity: 0.55,
+  emissiveIntensity: 0.,
   roughness: 0.95,
 });
 const moonMesh = new THREE.Mesh(

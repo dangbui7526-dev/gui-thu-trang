@@ -362,7 +362,7 @@ const wishList = [
     img: "./assets/2.jpg",
   },
   {
-    text: "Trăng tròn ấm áp, chúc tình cậu và tình yêu của chúng ta mãi bền chặt.",
+    text: "Trăng tròn ấm áp, chúc cậu và gia đình luôn hạnh phúc.",
     img: "./assets/3.jpg",
   },
   {

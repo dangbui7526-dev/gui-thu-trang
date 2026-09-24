@@ -367,7 +367,7 @@ const wishList = [
   },
   {
     text: "Chúc cậu luôn giữ được tâm hồn trong trẻo, yêu đời như ánh trăng rằm.",
-    img: "./assets/.jpg",
+    img: "./assets/4.jpg",
   },
   {
     text: "Trung Thu bình an, vạn sự như ý, công danh thăng tiến rực rỡ!",

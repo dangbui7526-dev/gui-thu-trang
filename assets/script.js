@@ -362,26 +362,51 @@ const wishList = [
     img: "./assets/2.jpg",
   },
   {
-    text: "Trăng tròn ấm áp, Chúc cậu một mùa Trung thu đủ đầy, mỗi ngày đều nhẹ nhàng như ánh trăng đêm rằm.",
+    text: "Trăng tròn ấm áp, chúc tình cậu và tình yêu của chúng ta mãi bền chặt.",
     img: "./assets/3.jpg",
   },
   {
     text: "Chúc cậu luôn giữ được tâm hồn trong trẻo, yêu đời như ánh trăng rằm.",
-    img: "./assets/4.jpg",
+    img: "./assets/1.jpg",
   },
   {
     text: "Trung Thu bình an, vạn sự như ý, công danh thăng tiến rực rỡ!",
-    img: "./assets/5.jpg",
+    img: "./assets/2.jpg",
   },
   {
     text: "Chúc riêng cậu một đêm trăng thật lãng mạn và ngọt ngào.",
-    img: "./assets/6.jpg",
+    img: "./assets/3.jpg",
   },
   {
     text: "Sức khỏe dồi dào, tâm an yên, miệng luôn mỉm cười rạng rỡ.",
-    img: "./assets/7.jpg",
+    img: "./assets/1.jpg",
   },
 ];
+
+// Xáo bài: mỗi lần bấm lấy 1 câu, đủ cả vòng mới xáo lại
+let wishQueue = [];
+let lastWish = null;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getNextWish() {
+  if (wishQueue.length === 0) {
+    wishQueue = shuffle([...wishList]);
+    // tránh câu đầu vòng mới trùng câu cuối vòng trước
+    const last = wishQueue.length - 1;
+    if (wishQueue.length > 1 && wishQueue[last] === lastWish) {
+      [wishQueue[0], wishQueue[last]] = [wishQueue[last], wishQueue[0]];
+    }
+  }
+  lastWish = wishQueue.pop();
+  return lastWish;
+}
 
 function createLanternTexture() {
   const canvas = document.createElement("canvas");
@@ -632,8 +657,9 @@ function onPointerUp(event) {
     targetCamPos = new THREE.Vector3().addVectors(lPos, offset);
     targetCamTarget = lPos.clone();
 
-    wishText.textContent = `"${selectedLantern.userData.wish}"`;
-    wishImage.src = selectedLantern.userData.imgUrl;
+    const wishData = getNextWish();
+    wishText.textContent = `"${wishData.text}"`;
+    wishImage.src = wishData.img;
 
     setTimeout(() => {
       wishModal.classList.add("active");

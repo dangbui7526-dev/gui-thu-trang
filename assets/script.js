@@ -23,7 +23,7 @@ camera.position.copy(DEFAULT_CAM_POS);
 
 const renderer = new THREE.WebGLRenderer({
   antialias: !isMobile,
-  alpha: false,
+  alpha: true,
   powerPreference: "high-performance",
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -31,6 +31,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.25;
 container.appendChild(renderer.domElement);
+renderer.setClearColor(0x000000, 0);
+container.style.background = 'url("./assets/bg.jpg") center / cover no-repeat';
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
